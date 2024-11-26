@@ -1,0 +1,83 @@
+Trong GameDataDef.h
+struct KMagicAttrib
+{
+	int				nAttribType;					//��������
+	int				nValue[4];						//���Բ���
+	short			nMin; //luu gia tri min cua opt
+	short			nMax;  //luu gia tri max cua opt
+	short			nIDM; // nValue[3] luu tru gia tri cua id magic
+	KMagicAttrib(){nValue[0] = nValue[1] = nValue[2] = nAttribType = nMin = nMax = nIDM = 0; };
+};
+
+Trong \KBasPropTbl.h
+Sửa KMACP		m_aryMagicAttribs[6]; thành KMACP		m_aryMagicAttribs[8];
+
+Trong KItem.cpp tìm đến KItem::GetDesc thêm vào
+
+short xMin = m_aryMagicAttrib[i].nMin;
+		short xMax = m_aryMagicAttrib[i].nMax;
+		short xIDMagic = m_aryMagicAttrib[i].nValue[3];
+		// Neu dat gia tri MAX, them dong "[MAX]"
+		if (m_aryMagicAttrib[i].nValue[0] == m_aryMagicAttrib[i].nMax)
+		{
+			sprintf(pszMsg, "%s <color=Red>[MAX]", pszMsg);
+		}
+		else 
+		{
+			// Hien thi khung [min-max]
+			if (m_aryMagicAttrib[i].nMin < 0) 
+			{
+				sprintf(pszMsg, "%s <color=Yellow>[<color=0,255,0>%d<color=Yellow>-%d]", pszMsg, xMin,xMax);
+			} 
+			else 
+			{
+				//sprintf(pszMsg, "%s <color=Yellow>[%d-%d]", pszMsg, xMin,xMax);
+				sprintf(pszMsg, "%s <color=Yellow>[<color=0,255,0>%d<color=Yellow>-%d]", pszMsg, xMin,xMax);
+			}
+		}
+
+Trong KItemGenerator.CPP thêm vào
+//load magicattrib
+		KTabFile MagicTab;
+    	MagicTab.Load("\\settings\\item\\004\\magicattrib.txt");
+		int nLow, nHigh;
+		char xiDMagic[32];
+		sprintf(xiDMagic, "%d", pMAItem->m_MagicAttrib.nPropKind);
+		int nDong = MagicTab.FindRowMagic(xiDMagic);
+		
+		
+		int idM = 0;
+		int nDongMax = 0;
+		int nSoDong = 0;
+		for (int nD = 1; nD < 10; nD++){
+			MagicTab.GetInteger(nDong + nD, 5, 0, &idM);
+			if(pMAItem->m_MagicAttrib.nPropKind == idM)
+			{
+				MagicTab.GetInteger(nDong + nD, 7, 0, &nHigh);
+				nSoDong = nD;
+				
+			}
+		}
+		//nDongMax = nDong + nSoDong;
+
+			MagicTab.GetInteger(nDong, 6, 0, &nLow);
+			pnaryMA[i].nMin = nLow;//nLow;
+			//MagicTab.GetInteger(nDong, "Camp", 0, &m_Camp);
+			
+			pnaryMA[i].nMax = nHigh;
+			pnaryMA[i].nValue[3] = nHigh;
+trong KItemGenerator::Gen_MagicAttrib(
+
+Trong KTabFile.cpp thêm
+int KTabFile::FindRowMagic(LPSTR szRow)
+{
+	char	szTemp[128];
+	for (int i = 0; i < m_Height; i++)	// ��1��ʼ��������һ�е��ֶ���
+	{
+		GetValue(i, 4, szTemp, g_StrLen(szRow));
+		if (g_StrCmp(szTemp, szRow))
+			return i + 1; //�Ķ��˴�Ϊ��һ by Romandou,��������1Ϊ���ı��
+	}
+	return -1;
+}
+
